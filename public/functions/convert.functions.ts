@@ -1,3 +1,5 @@
+import ConvertConstants from "../constants/convert.constants";
+
 const operators: string[] = ["*", "+", "-", "/"];
 
 const isolateCommands = (code: string): string[] => {
@@ -17,22 +19,38 @@ const removeExtraSpaces = (commands: string[]): string[] => {
   });
 };
 
-const filterInpureCommands = (commands: string[]): string[] => {
+const filterInpureCommands = (
+  commands: string[],
+  keyword: string | undefined
+): string[] => {
   return commands.filter(
-    (command: string) => command.includes("this") && command.includes("=")
+    (command: string) =>
+      command.includes(keyword || ConvertConstants.DEFAULT_KEYWORD) &&
+      command.includes("=")
   );
 };
 
-const getInpureVariableName = (command: string): string => {
-  const startIndex: number = command.indexOf("this");
+const getInpureVariableName = (
+  command: string,
+  keyword: string | undefined
+): string => {
+  const startIndex: number = command.indexOf(
+    keyword || ConvertConstants.DEFAULT_KEYWORD
+  );
   const endIndex: number = command.indexOf(" ");
   const inpureVariable: string = command.slice(startIndex, endIndex);
 
   return inpureVariable;
 };
 
-const defineFunctionName = (inpureVariable: string): string => {
-  inpureVariable = inpureVariable.replace("this.", "");
+const defineFunctionName = (
+  inpureVariable: string,
+  keyword: string | undefined
+): string => {
+  inpureVariable = inpureVariable.replace(
+    `${keyword || ConvertConstants.DEFAULT_KEYWORD}.`,
+    ""
+  );
   const capitalizedVariable: string =
     inpureVariable[0].toUpperCase() + inpureVariable.slice(1);
 
@@ -98,10 +116,13 @@ const mountFunction = (
 }`;
 };
 
-const purificateCommands = (commands: string[]): any[] => {
+const purificateCommands = (
+  commands: string[],
+  keyword: string | undefined
+): any[] => {
   const result: any = commands.map((command: string) => {
-    const inpureVariable: string = getInpureVariableName(command);
-    const functionName: string = defineFunctionName(inpureVariable);
+    const inpureVariable: string = getInpureVariableName(command, keyword);
+    const functionName: string = defineFunctionName(inpureVariable, keyword);
     const functionParams: string[] = defineFunctionParams(command);
     const functionReturn: string = defineFunctionReturn(command);
     const purificatedMethod: string = mountFunction(
@@ -141,12 +162,15 @@ const buildCommands = (results: any[]): string => {
   }, "");
 };
 
-export const convertPureFunction = (input: string) => {
+export const convertPureFunction = (
+  input: string,
+  keyword: string | undefined
+) => {
   let commands = isolateCommands(input);
   commands = removeExtraSpaces(commands);
-  commands = filterInpureCommands(commands);
+  commands = filterInpureCommands(commands, keyword);
 
-  const results: any[] = purificateCommands(commands);
+  const results: any[] = purificateCommands(commands, keyword);
 
   const resultMethods: string = buildMethods(results);
   const resultCommands: string = buildCommands(results);
